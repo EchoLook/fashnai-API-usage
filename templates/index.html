@@ -1,0 +1,310 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Virtual Try-On App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .column {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result-image {
+            max-width: 100%;
+            height: auto;
+            margin-top: 15px;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .tabs {
+            margin-bottom: 15px;
+        }
+        .tab {
+            display: inline-block;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: #f8f9fa;
+            border-bottom: none;
+        }
+        .tab-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 4px 4px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .preview-container {
+            display: flex;
+            gap: 15px;
+        }
+        .preview {
+            width: 150px;
+        }
+    </style>
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            
+            // Get all elements with class="tablinks" and remove the class "active"
+            tablinks = document.getElementsByClassName("tab");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        function previewImage(input, previewId) {
+            const preview = document.getElementById(previewId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submit-btn').disabled = true;
+        }
+
+        window.onload = function() {
+            // Set the first tab as active by default
+            document.getElementsByClassName('tab')[0].click();
+            document.getElementsByClassName('tab')[2].click();
+        }
+    </script>
+</head>
+<body>
+    <h1>Virtual Try-On App</h1>
+    <p>Upload a picture of a person and a clothing item to see how the clothing would look on the person.</p>
+    
+    <div class="container">
+        <!-- Input column -->
+        <div class="column">
+            <h2>Upload Images</h2>
+            
+            <form action="/try-on" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                <!-- Person Image -->
+                <div class="form-group">
+                    <div class="tabs">
+                        <button type="button" class="tab" onclick="openTab(event, 'model-upload')">Upload Person Image</button>
+                        <button type="button" class="tab" onclick="openTab(event, 'model-camera')">Take Photo</button>
+                    </div>
+                    
+                    <div id="model-upload" class="tab-content">
+                        <input type="file" id="model-file" name="model_image" accept="image/*" onchange="previewImage(this, 'model-preview')">
+                    </div>
+                    
+                    <div id="model-camera" class="tab-content">
+                        <p>Use your device camera to take a photo:</p>
+                        <button type="button" onclick="startCamera('model-camera-container', 'model-camera-capture', 'model-preview')">Start Camera</button>
+                        <div id="model-camera-container"></div>
+                        <input type="hidden" id="model-camera-capture" name="model_camera_image">
+                    </div>
+                </div>
+                
+                <!-- Garment Image -->
+                <div class="form-group">
+                    <div class="tabs">
+                        <button type="button" class="tab" onclick="openTab(event, 'garment-upload')">Upload Garment Image</button>
+                        <button type="button" class="tab" onclick="openTab(event, 'garment-camera')">Take Photo</button>
+                    </div>
+                    
+                    <div id="garment-upload" class="tab-content">
+                        <input type="file" id="garment-file" name="garment_image" accept="image/*" onchange="previewImage(this, 'garment-preview')">
+                    </div>
+                    
+                    <div id="garment-camera" class="tab-content">
+                        <p>Use your device camera to take a photo:</p>
+                        <button type="button" onclick="startCamera('garment-camera-container', 'garment-camera-capture', 'garment-preview')">Start Camera</button>
+                        <div id="garment-camera-container"></div>
+                        <input type="hidden" id="garment-camera-capture" name="garment_camera_image">
+                    </div>
+                </div>
+                
+                <!-- Preview images -->
+                <div class="preview-container">
+                    <div>
+                        <p>Person preview:</p>
+                        <img id="model-preview" class="preview" style="display: none;" alt="Person preview">
+                    </div>
+                    <div>
+                        <p>Garment preview:</p>
+                        <img id="garment-preview" class="preview" style="display: none;" alt="Garment preview">
+                    </div>
+                </div>
+                
+                <!-- Category selection -->
+                <div class="form-group">
+                    <label for="category">Clothing Category:</label>
+                    <select id="category" name="category">
+                        <option value="auto">Auto-detect</option>
+                        <option value="tops">Tops</option>
+                        <option value="bottoms">Bottoms</option>
+                        <option value="one-pieces">One-pieces</option>
+                    </select>
+                </div>
+                
+                <!-- Submit button -->
+                <button type="submit" id="submit-btn">Generate Try-On</button>
+                <div id="loading" style="display: none;">Processing your request... This may take up to 40 seconds.</div>
+            </form>
+        </div>
+        
+        <!-- Output column -->
+        <div class="column">
+            <h2>Results</h2>
+            
+            {% if message %}
+                <div class="message {% if message.startswith('Error') or message.startswith('Processing failed') %}error{% elif message.startswith('Processing completed') %}success{% else %}info{% endif %}">
+                    {{ message }}
+                </div>
+            {% endif %}
+            
+            {% if result_image %}
+                <img src="{{ result_image }}" alt="Try-On Result" class="result-image">
+                <a href="{{ result_image }}" download="virtual_tryon_result.jpg">
+                    <button>Download Result</button>
+                </a>
+            {% elif not message %}
+                <div class="message info">Your try-on result will appear here.</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <hr>
+    <h2>How it works</h2>
+    <ol>
+        <li>Upload a photo of a person (model) or take one with your webcam</li>
+        <li>Upload a photo of the clothing item or take one with your webcam</li>
+        <li>Select the clothing category (auto, tops, bottoms, or one-pieces)</li>
+        <li>Click 'Generate Try-On' to see the result</li>
+    </ol>
+    <p>The app uses Fashn.ai's API to virtually try on the clothing on the model.</p>
+    
+    <script>
+        function startCamera(containerId, captureId, previewId) {
+            const container = document.getElementById(containerId);
+            
+            // Create video element if it doesn't exist
+            if (!document.getElementById(containerId + '-video')) {
+                const video = document.createElement('video');
+                video.id = containerId + '-video';
+                video.width = 320;
+                video.height = 240;
+                video.autoplay = true;
+                container.appendChild(video);
+                
+                // Create capture button
+                const captureBtn = document.createElement('button');
+                captureBtn.textContent = 'Capture';
+                captureBtn.type = 'button';
+                captureBtn.style.display = 'block';
+                captureBtn.style.marginTop = '10px';
+                container.appendChild(captureBtn);
+                
+                // Get user media
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        video.srcObject = stream;
+                        
+                        // Set up capture button
+                        captureBtn.onclick = function() {
+                            // Create canvas to capture image
+                            const canvas = document.createElement('canvas');
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            canvas.getContext('2d').drawImage(video, 0, 0);
+                            
+                            // Get data URL and set to hidden input and preview
+                            const dataUrl = canvas.toDataURL('image/jpeg');
+                            document.getElementById(captureId).value = dataUrl;
+                            document.getElementById(previewId).src = dataUrl;
+                            document.getElementById(previewId).style.display = 'block';
+                            
+                            // Stop the camera stream
+                            stream.getTracks().forEach(track => track.stop());
+                            
+                            // Remove video and capture button
+                            container.innerHTML = '<p>Photo captured! You can retake by clicking the start camera button again.</p>';
+                        };
+                    })
+                    .catch(err => {
+                        container.innerHTML = '<p>Error accessing the camera: ' + err.message + '</p>';
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
