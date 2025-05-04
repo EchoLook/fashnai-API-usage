@@ -67,3 +67,7 @@ For more information about the API, see the [Fashn.ai API documentation](https:/
 ## Troubleshooting
 
 Refer to the [SETUP.md](SETUP.md) file for detailed setup instructions and troubleshooting tips.
+
+## License
+
+[MIT License](LICENSE)
